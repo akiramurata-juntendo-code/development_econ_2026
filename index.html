@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>開発クエスト 〜勇者と貧困魔王の十四の試練〜 | 途上国開発論 (ECO331)</title>
+<!--
+  ============================================================
+  開発クエスト 冒険マップ（教員用メモ）
+  ============================================================
+  ・下の <script> 冒頭にある FORM_URLS に、GoogleForm自動作成スクリプトで
+    作成した各フォームの「回答用URL」を貼り付けてください。
+    quiz[0]が第1の試練、quiz[13]が第14の試練。空欄("")のままでも動きます。
+    castle には「魔王城の扉」フォーム、submit には「冒険の書 提出」フォームのURL。
+  ・答え（ルーン・呪文・門の鍵・暗証番号）はすべてSHA-256ハッシュで照合され、
+    このファイルに平文は含まれません。
+  ・学生の進行状況は各自のブラウザ（localStorage）にのみ保存されます。
+  ・PERSONAL_TOPIC = true のとき、最終エッセイの題目は学籍番号に応じて
+    4種類が自動で出し分けられます（学生には仕組みを知らせないでください）。
+  ============================================================
+-->
+<style>
+  :root{
+    --bg:#0d0b1a; --bg2:#161230; --panel:#1e1840; --panel2:#241d4e;
+    --gold:#e8c464; --gold2:#b8933a; --text:#e8e2f5; --sub:#9d93c4;
+    --ok:#6ee7a0; --ng:#ff7b7b; --hp:#7c5cff; --line:#3a3170;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+    line-height:1.75; min-height:100vh;
+    background-image:
+      radial-gradient(ellipse at 20% 0%, rgba(124,92,255,.14), transparent 55%),
+      radial-gradient(ellipse at 80% 100%, rgba(232,196,100,.08), transparent 55%);
+  }
+  header{
+    text-align:center; padding:28px 16px 18px;
+    border-bottom:2px solid var(--gold2);
+    background:linear-gradient(180deg, rgba(30,24,64,.9), rgba(13,11,26,.6));
+  }
+  header .crest{font-size:2.2rem; letter-spacing:.3em;}
+  header h1{
+    font-size:1.55rem; color:var(--gold); letter-spacing:.12em; margin:6px 0 2px;
+    text-shadow:0 0 18px rgba(232,196,100,.35);
+  }
+  header .sub{color:var(--sub); font-size:.85rem;}
+  #heroBar{
+    display:flex; gap:14px; justify-content:center; align-items:center;
+    flex-wrap:wrap; margin-top:12px; font-size:.85rem;
+  }
+  .badge-chip{
+    background:var(--panel2); border:1px solid var(--gold2); color:var(--gold);
+    padding:3px 14px; border-radius:999px;
+  }
+  .hpwrap{display:flex; align-items:center; gap:8px;}
+  .hpbar{width:180px; height:12px; background:#0a0818; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .hpbar>div{height:100%; background:linear-gradient(90deg,var(--hp),#b39dff); width:0%; transition:width .6s;}
+  nav{
+    display:flex; justify-content:center; gap:8px; flex-wrap:wrap;
+    padding:12px; background:rgba(22,18,48,.92); position:sticky; top:0; z-index:20;
+    border-bottom:1px solid var(--line); backdrop-filter:blur(6px);
+  }
+  nav button{
+    background:var(--panel); color:var(--text); border:1px solid var(--line);
+    padding:8px 18px; border-radius:8px; cursor:pointer; font-size:.9rem;
+    transition:all .2s; font-family:inherit;
+  }
+  nav button:hover{border-color:var(--gold2); color:var(--gold);}
+  nav button.active{background:var(--gold); color:#241d0a; font-weight:bold; border-color:var(--gold);}
+  main{max-width:960px; margin:0 auto; padding:26px 16px 80px;}
+  main section{display:none; animation:fadein .5s;}
+  main section.visible{display:block;}
+  @keyframes fadein{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+  .panel{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:22px 24px; margin-bottom:22px;
+    box-shadow:0 4px 24px rgba(0,0,0,.35);
+  }
+  .panel h2{color:var(--gold); font-size:1.15rem; margin-bottom:12px; letter-spacing:.06em;}
+  .panel h3{color:var(--gold); font-size:1rem; margin:14px 0 8px;}
+  .panel p{margin-bottom:10px; font-size:.95rem;}
+  .note{color:var(--sub); font-size:.82rem;}
+  .stone{
+    background:#0a0818; border:1px dashed var(--gold2); border-radius:10px;
+    text-align:center; padding:16px; margin:14px 0; font-size:1.15rem;
+    letter-spacing:.18em; color:var(--gold);
+  }
+  input[type=text]{
+    background:#0a0818; color:var(--text); border:1px solid var(--line);
+    border-radius:8px; padding:10px 14px; font-size:1rem; width:100%;
+    font-family:inherit;
+  }
+  input[type=text]:focus{outline:none; border-color:var(--gold2);}
+  .row{display:flex; gap:10px; margin:10px 0; flex-wrap:wrap;}
+  .row input{flex:1; min-width:180px;}
+  button.act{
+    background:linear-gradient(180deg,var(--gold),var(--gold2)); color:#241d0a;
+    border:none; padding:10px 22px; border-radius:8px; font-weight:bold;
+    cursor:pointer; font-size:.95rem; font-family:inherit; white-space:nowrap;
+  }
+  button.act:hover{filter:brightness(1.1);}
+  button.ghost{
+    background:transparent; color:var(--sub); border:1px solid var(--line);
+    padding:8px 16px; border-radius:8px; cursor:pointer; font-size:.85rem; font-family:inherit;
+  }
+  .msg{margin-top:8px; font-size:.9rem; min-height:1.4em;}
+  .msg.ok{color:var(--ok);}
+  .msg.ng{color:var(--ng);}
+  .shake{animation:shake .4s;}
+  @keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-7px);}75%{transform:translateX(7px);}}
+  /* パーティー */
+  .party{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-top:10px;}
+  .member{
+    background:var(--panel2); border:1px solid var(--line); border-radius:12px;
+    padding:14px; text-align:center; transition:all .3s;
+  }
+  .member .face{font-size:2rem;}
+  .member .nm{color:var(--gold); font-weight:bold; margin:4px 0 2px;}
+  .member .cls{font-size:.78rem; color:var(--sub);}
+  .member .desc{font-size:.8rem; margin-top:6px; text-align:left;}
+  .member.locked{opacity:.38; filter:grayscale(.8);}
+  .member.locked .nm::after{content:"（未加入）"; font-size:.7rem; color:var(--sub);}
+  /* 章と地域カード */
+  .chapter{margin-bottom:30px;}
+  .chapter-head{
+    display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;
+    border-left:5px solid var(--gold2); padding-left:12px; margin-bottom:12px;
+  }
+  .chapter-head h2{color:var(--gold); font-size:1.1rem;}
+  .chapter-head .cstat{font-size:.8rem; color:var(--sub);}
+  .region{
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:16px 18px; margin-bottom:12px;
+  }
+  .region.done{border-color:var(--gold2); background:linear-gradient(180deg,var(--panel),rgba(232,196,100,.06));}
+  .region-top{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center;}
+  .region-top .ttl{font-weight:bold; color:var(--gold);}
+  .region-top .boss{font-size:.85rem; color:var(--ng);}
+  .region.done .boss{color:var(--ok);}
+  .kw{font-size:.8rem; color:var(--sub); margin:6px 0;}
+  .kw b{color:var(--text); font-weight:normal;}
+  .runeSlot{
+    display:inline-block; min-width:2.2em; text-align:center; font-size:1.25rem;
+    background:#0a0818; border:1px solid var(--gold2); border-radius:8px;
+    color:var(--gold); padding:2px 8px; margin-left:6px;
+  }
+  .hintbox{
+    margin-top:10px; background:rgba(124,92,255,.08); border-left:3px solid var(--hp);
+    border-radius:0 8px 8px 0; padding:10px 14px; font-size:.87rem;
+  }
+  .hintbox b{color:#b39dff;}
+  a.flink{color:var(--gold); font-weight:bold;}
+  a.flink.off{color:var(--sub); pointer-events:none; text-decoration:none;}
+  /* 城 */
+  .gate{
+    background:var(--panel2); border:1px solid var(--line); border-radius:12px;
+    padding:16px 18px; margin-bottom:12px;
+  }
+  .gate.open{border-color:var(--gold2);}
+  .gate .gttl{color:var(--gold); font-weight:bold;}
+  .digit{
+    display:inline-block; width:2em; text-align:center; font-size:1.7rem;
+    background:#0a0818; border:2px solid var(--gold2); border-radius:10px;
+    color:var(--gold); margin:0 4px; padding:4px 0; letter-spacing:0;
+  }
+  .digit.unknown{color:var(--sub); border-color:var(--line);}
+  .boss-final{
+    text-align:center; padding:26px; border:2px solid var(--ng);
+    border-radius:14px; margin:16px 0; background:rgba(255,123,123,.05);
+  }
+  .boss-final .bname{font-size:1.3rem; color:var(--ng); letter-spacing:.15em;}
+  .certbox{
+    background:#0a0818; border:2px solid var(--gold); border-radius:12px;
+    text-align:center; padding:16px; margin:14px 0;
+    font-size:1.3rem; color:var(--gold); letter-spacing:.08em;
+  }
+  .themebox{
+    background:rgba(232,196,100,.07); border:1px solid var(--gold2);
+    border-radius:12px; padding:16px 18px; margin:14px 0; font-size:.93rem;
+  }
+  .themebox .tname{color:var(--gold); font-weight:bold; font-size:1.05rem;}
+  ol.steps{margin:8px 0 8px 22px; font-size:.92rem;}
+  ol.steps li{margin-bottom:6px;}
+  table.flow{width:100%; border-collapse:collapse; font-size:.85rem; margin:10px 0;}
+  table.flow td, table.flow th{border:1px solid var(--line); padding:8px 10px; text-align:left;}
+  table.flow th{background:var(--panel2); color:var(--gold); white-space:nowrap;}
+  .center{text-align:center;}
+  .ending{
+    border:2px solid var(--gold); border-radius:14px; padding:22px;
+    background:linear-gradient(180deg, rgba(232,196,100,.1), transparent);
+    margin-top:16px;
+  }
+  footer{
+    text-align:center; color:var(--sub); font-size:.75rem; padding:20px;
+    border-top:1px solid var(--line);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="crest">⚜️</div>
+  <h1>開発クエスト 〜勇者と貧困魔王の十四の試練〜</h1>
+  <div class="sub">途上国開発論 (ECO331) 期末レポート・復習クエスト ／ ミレニア王国 勇者ギルド公認</div>
+  <div id="heroBar">
+    <span class="badge-chip" id="badgeChip">勇者未登録</span>
+    <span class="badge-chip" id="rankChip">称号：村人</span>
+    <span class="hpwrap"><span class="note">討伐</span><span class="hpbar"><div id="hpFill"></div></span><span class="note" id="hpText">0/14</span></span>
+  </div>
+</header>
+
+<nav>
+  <button data-scene="summon" class="active">🕯️ 召喚の間</button>
+  <button data-scene="map">🗺️ 冒険マップ</button>
+  <button data-scene="castle">🏰 魔王城</button>
+  <button data-scene="guide">📖 冒険の心得</button>
+</nav>
+
+<main>
+
+<!-- ================= 召喚の間 ================= -->
+<section id="scene-summon" class="visible">
+  <div class="panel" id="summonBox">
+    <h2>🕯️ 召喚の儀 ― 石版の暗号</h2>
+    <p>気がつくと、あなたは見知らぬ石造りの間に立っていた。祭壇の石版に、古代の数字が刻まれている。</p>
+    <div class="stone">11 ・ 1 ・ 9 ・ 8 ・ 1 ・ 20 ・ 19 ・ 21</div>
+    <p class="note">石版の脇にはこう彫られている――「数字は文字なり。1はA、2はB、3はC……。読み解きし言葉を唱えよ。答えはローマ字のまま唱えても、大和言葉（ひらがな）に直して唱えてもよい」</p>
+    <div class="row">
+      <input type="text" id="summonInput" placeholder="読み解いた言葉を入力">
+      <button class="act" onclick="checkSummon()">唱える</button>
+    </div>
+    <div class="msg" id="summonMsg"></div>
+  </div>
+
+  <div class="panel" id="letterBox" style="display:none;">
+    <h2>📜 デヴェロス王の勅書</h2>
+    <div id="letterText"></div>
+  </div>
+
+  <div class="panel" id="badgeBox" style="display:none;">
+    <h2>🛡️ 勇者ギルド登録</h2>
+    <p>ギルドの受付嬢が羊皮紙を差し出した。「冒険を記録するため、あなたの<b>勇者番号（学籍番号7桁）</b>を登録してください」</p>
+    <div class="row">
+      <input type="text" id="sidInput" placeholder="例：7126001（半角数字7桁）">
+      <button class="act" onclick="registerBadge()">登録する</button>
+    </div>
+    <div class="msg" id="sidMsg"></div>
+    <p class="note">※進行状況はこの端末のブラウザにのみ保存されます。いつも同じ端末・同じブラウザで冒険しましょう。</p>
+  </div>
+
+  <div class="panel" id="partyBox" style="display:none;">
+    <h2>🎒 旅の仲間たち</h2>
+    <p>この冒険では、講義でおなじみの4人が力を貸してくれる。仲間は章をクリアするごとに増えていく。</p>
+    <div class="party" id="partyGrid"></div>
+    <p class="center" style="margin-top:14px;"><button class="act" onclick="showScene('map')">🗺️ 冒険マップへ出発する</button></p>
+  </div>
+</section>
+
+<!-- ================= 冒険マップ ================= -->
+<section id="scene-map">
+  <div class="panel">
+    <h2>🗺️ ミレニア大陸 冒険マップ</h2>
+    <p>各地に巣くう<b>14体のボス</b>を倒せ。ボス戦（復習クイズ）に挑み、送信完了画面で授かる<b>ルーン文字</b>をこのマップに刻印しよう。刻印すると、賢者エビデンスくんから<b>魔王城攻略のヒント</b>（レポートに直結）を授かれる。</p>
+    <p class="note">⚠️ ボス戦フォームのリンクが「準備中」の場合は、Google Classroomのリンクから挑戦してください。</p>
+  </div>
+  <div id="mapArea"></div>
+</section>
+
+<!-- ================= 魔王城 ================= -->
+<section id="scene-castle">
+  <div class="panel" id="spellBox">
+    <h2>🏰 魔王城の城門</h2>
+    <p>漆黒の城がそびえ立つ。城門には14個のくぼみと、こう刻まれている。</p>
+    <p class="stone" style="font-size:.95rem; letter-spacing:.1em;">「十四の試練を制せし者、ルーンを試練の順に連ねて唱えよ」</p>
+    <div class="row">
+      <input type="text" id="spellInput" placeholder="ルーン14文字をひらがなで続けて入力">
+      <button class="act" onclick="checkSpell()">呪文を唱える</button>
+    </div>
+    <div class="msg" id="spellMsg"></div>
+  </div>
+
+  <div id="castleInner" style="display:none;">
+    <div class="panel">
+      <h2>⚔️ 魔王城・四つの門</h2>
+      <p>城門をくぐると、玉座の間へ続く回廊に<b>4つの門</b>が立ちはだかった。それぞれの門は「冒険の書」（レポート課題）の各部に対応する謎を問うてくる。謎の答えを告げると、門に<b>数字</b>が浮かび上がる。</p>
+      <p class="center">王家の預言の数字：
+        <span class="digit unknown" id="digit0">?</span>
+        <span class="digit unknown" id="digit1">?</span>
+        <span class="digit unknown" id="digit2">?</span>
+        <span class="digit unknown" id="digit3">?</span>
+      </p>
+      <div id="gatesArea"></div>
+    </div>
+
+    <div class="panel" id="throneBox">
+      <h2>👑 玉座の扉</h2>
+      <p>4つの門を抜けた先、最後の扉には数字盤が付いている。扉にはこう刻まれている。</p>
+      <p class="stone" style="font-size:.92rem; letter-spacing:.06em;">「預言の四桁に、汝の勇者番号の下四桁を重ねよ。<br>桁ごとに足し、十を超えれば十を捨てよ。<br>それが汝だけの<b>個人暗証番号</b>なり」</p>
+      <p class="note">例）預言が「1234」で勇者番号下4桁が「5678」なら、1+5=6、2+6=8、3+7=10→0、4+8=12→2 で「6802」。</p>
+      <div class="row">
+        <input type="text" id="throneInput" placeholder="あなたの個人暗証番号（4桁）">
+        <button class="act" onclick="checkThrone()">扉を開く</button>
+      </div>
+      <div class="msg" id="throneMsg"></div>
+    </div>
+
+    <div id="finalArea" style="display:none;">
+      <div class="panel">
+        <h2>🐉 最終決戦 ― 貧困魔王ポヴェルタ</h2>
+        <div class="boss-final">
+          <div style="font-size:2.6rem;">👹</div>
+          <div class="bname">貧困魔王ポヴェルタ</div>
+          <p style="margin-top:8px; font-size:.9rem;">「よくぞここまで来た、勇者よ。だが知恵なき剣では余は倒せぬ。<br>汝が十四の試練で得た<b>知恵のすべて</b>を、冒険の書に記して見せよ！」</p>
+        </div>
+        <p>王家の預言の数字<b>「2030」</b>――それは<b>SDGs（持続可能な開発目標）の達成目標年</b>。魔王を倒す武器は剣ではなく、あなたが積み上げた<b>学びの力</b>だ。</p>
+        <h3>📜 あなた専用・最終決戦の書（エッセイ題目）</h3>
+        <div class="themebox" id="themeBox"></div>
+        <h3>🏅 勇者の証明コード</h3>
+        <p>これは<b>あなたの勇者番号から生成された、あなただけのコード</b>だ。「魔王城の扉」フォームと「冒険の書 提出」フォームに正確に書き写そう。</p>
+        <div class="certbox" id="certBox"></div>
+        <p class="note">⚠️ 他人のコードを写しても、学籍番号と照合すると必ず見破られる。冒険の栄誉は自分の力で。</p>
+        <h3>⚜️ 献上の手順</h3>
+        <ol class="steps">
+          <li><span id="castleFormLink"></span>「魔王城の扉」フォームで、呪文・個人暗証番号・証明コード・題目名を刻む。</li>
+          <li>冒険の書（レポート課題）の第1部〜第4部の記述と、上の題目に従った最終エッセイ（1000〜1400字）を書き上げる。</li>
+          <li><span id="submitFormLink"></span>「冒険の書 提出」フォームからすべてを献上する（締切は冒険の書に記載）。</li>
+        </ol>
+      </div>
+      <div class="ending panel">
+        <h2>👑 デヴェロス王の褒賞</h2>
+        <p>「勇者よ、十四の試練を制し、四つの門を開き、魔王に挑む知恵を示したこと、まことに見事である。そなたに<b>『開発の賢者』</b>の称号と、王家の宝<b>『みらいのコンパス』</b>を授けよう。」</p>
+        <p>「――このコンパスは、金銀ではなく<b>問いの立て方</b>を指し示す。『なぜ豊かな国と貧しい国があるのか』『何が本当に効くのか、どう確かめるのか』。その針が指す先へ、これからも歩んでゆくがよい。<b>まなびのちからで、わなをこえよ。</b>」</p>
+        <p class="note">🎓 現実世界の報酬（成績）は、提出された冒険の書を王国の書記官（教員）が査読したのちに授与されます。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 冒険の心得 ================= -->
+<section id="scene-guide">
+  <div class="panel">
+    <h2>📖 冒険の心得（遊び方）</h2>
+    <table class="flow">
+      <tr><th>STEP 1</th><td>🕯️ <b>召喚の間</b>で石版の暗号を解き、勇者番号（学籍番号）を登録する。</td></tr>
+      <tr><th>STEP 2</th><td>🗺️ <b>冒険マップ</b>から14体のボス（復習クイズ）に挑む。順番はどこからでもOK。送信完了画面のルーン文字をマップに刻印すると、賢者のヒントが手に入る。</td></tr>
+      <tr><th>STEP 3</th><td>🏰 14個のルーンが揃ったら<b>魔王城</b>へ。呪文を唱えて城門を開き、4つの門の謎（冒険の書＝レポート課題に対応）を解く。</td></tr>
+      <tr><th>STEP 4</th><td>👑 玉座の扉で個人暗証番号を入力。<b>専用エッセイ題目</b>と<b>勇者の証明コード</b>を受け取る。</td></tr>
+      <tr><th>STEP 5</th><td>📮 「魔王城の扉」フォーム → 冒険の書を執筆 → 「冒険の書 提出」フォームで献上して冒険完了！</td></tr>
+    </table>
+    <h3>⚖️ 冒険の掟</h3>
+    <p style="font-size:.9rem;">
+      ・ボス戦（クイズ）は<b>何度でも</b>挑戦できる。仲間（クラスメイト）と概念を教え合うのは大歓迎。<br>
+      ・ただし、記述・エッセイの<b>文章のコピペは禁忌</b>。証明コードとエッセイ題目は勇者ごとに異なり、王国の書記官はすべて照合できる。<br>
+      ・レポートで問われるのは「正解」よりも<b>考える過程</b>。講義の概念と実証研究を自分の言葉で使うこと。<br>
+      ・進行状況はこの端末のブラウザにのみ保存される。端末を変えると冒険の記録は引き継がれない（ルーンをメモしておけば再入力で復元できる）。
+    </p>
+    <h3>🧰 冒険がうまく進まないとき</h3>
+    <p style="font-size:.9rem;">
+      ・ルーンが合わない → クイズ送信完了画面の「獲得ルーン」を再確認（ひらがな1文字）。<br>
+      ・呪文が通らない → 14文字を<b>試練の順番どおり</b>に、ひらがなで空白なしで。<br>
+      ・扉が開かない → 個人暗証番号の計算例を玉座の扉でもう一度確認。<br>
+      ・それでも困ったら → Google Classroomで教員に質問（ゲームの答え以外は何でも聞いてOK）。
+    </p>
+    <p style="margin-top:14px;"><button class="ghost" onclick="resetProgress()">⚠️ 冒険の記録をすべて消去してはじめからにする</button></p>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  順天堂大学 国際教養学部「途上国開発論 (ECO331)」2026年度前期 期末レポート教材<br>
+  教科書：『実証から学ぶ開発経済学』（有斐閣）／ Powered by ミレニア王国 勇者ギルド
+</footer>
+
+<script>
+/* ============================================================
+   【教員設定】Google Formの回答用URLをここに貼り付けてください。
+   quiz[0]が第1の試練、quiz[13]が第14の試練。空欄("")のままでも動きます。
+   ============================================================ */
+const FORM_URLS = {
+  quiz: [
+    "https://docs.google.com/forms/d/e/1FAIpQLScooguR6COqAn6XB6nwqNUPt4shwyHPqHkOEPyGVAP0Ral6vA/viewform", // 第1の試練（第1回講義）
+    "https://docs.google.com/forms/d/e/1FAIpQLSdPUf2SoGWIn2a3Tq9e0KUATL1Hv_82Sc9Q68icaNb3lW3fKA/viewform", // 第2の試練（第2回講義）
+    "https://docs.google.com/forms/d/e/1FAIpQLSey9Nn3BFEtnaZUpLsQO3IyCnMq6OLXdslM52kZcbL-giNz7w/viewform", // 第3の試練（第3回講義）
+    "https://docs.google.com/forms/d/e/1FAIpQLSdiOS1MwWJNK7ccPETOOqOreCXFcjWw-q5eoNpXfOoiQGSl6w/viewform", // 第4の試練（第4回講義）
+    "https://docs.google.com/forms/d/e/1FAIpQLSfy62nPd9pM1nEWIspjonetME1G5juFreIbZeaHuXnE7UFmJg/viewform", // 第5の試練（第5回講義）
+    "https://docs.google.com/forms/d/e/1FAIpQLSfCkBcYZ9h9w0l8eIah313L6SAwwik11YC2WjTgpCBm_F-u0A/viewform", // 第6の試練（第6回講義）
+    "https://docs.google.com/forms/d/e/1FAIpQLScqJ6IR3BYBMEf6MDPOmoe94n_Ctl_y9O0V_ZTAN1vMqYs8Cw/viewform", // 第7の試練（第7回講義）
+    "https://docs.google.com/forms/d/e/1FAIpQLSedVRvxNGM0lz3e0v9OPE67jW-gTSFx0T4dZw6yYEHw7fHZCA/viewform", // 第8の試練（第8回講義）
+    "https://docs.google.com/forms/d/e/1FAIpQLSeWHd0uNYiLyD94Edkm0ZoiwEjmhLhiMWhZV7C-4O0Skv3fqA/viewform", // 第9の試練（第9回講義）
+    "https://docs.google.com/forms/d/e/1FAIpQLSfDmQeqVFQQbNRgtPS_U8k3vioFtxl_4KRmYpTIg8d9PuJuQg/viewform", // 第10の試練（第10回講義）
+    "https://docs.google.com/forms/d/e/1FAIpQLSc2AmdzgIg_J9fEemKjFUxIaK1I4AIdunnGMYnaviYMc0mWBA/viewform", // 第11の試練（第11回講義）
+    "https://docs.google.com/forms/d/e/1FAIpQLSfx1VVM9Lr95zcE4NEP0uUVCp1QjOXq6fxaeHb3zPudnfKumw/viewform", // 第12の試練（第12回講義）
+    "https://docs.google.com/forms/d/e/1FAIpQLSfDnwehaG_Ap4IXwoGgCw4gtRoSYdh3HMPfGxiJ5XBG575tYQ/viewform", // 第13の試練（第13回講義）
+    "https://docs.google.com/forms/d/e/1FAIpQLSfLl263popZt_xbDpTd5-wuSJtrHPPzKaAbpu8hJME66aibnA/viewform"  // 第14の試練（第14回講義）
+  ],
+  castle: "https://docs.google.com/forms/d/e/1FAIpQLScAJ44DmODvdDCc1tf2wSz3P5OZIbpi5QaNRrimA4FlxpegkQ/viewform",  // 「魔王城の扉」フォーム
+  submit: "https://docs.google.com/forms/d/e/1FAIpQLSeZnPPT3j6ieLJ_Pij_PfClloaFGj9XZBlzpbHwHjp6dIXBeg/viewform"   // 「冒険の書 提出」フォーム
+};
+
+/* 最終エッセイ題目を学籍番号に応じて自動で出し分ける（学生には仕組みを知らせない）。
+   使わない場合は false（全員共通の一般版が表示されます）。 */
+const PERSONAL_TOPIC = true;
+const FINAL_THEMES = [
+  {name:"わたしの持ち物と世界がつながる場所",
+   body:"あなたの<b>持ち物を1つ</b>選べ（スマートフォン、Tシャツ、チョコレート、コーヒー、スニーカーなど）。それが<b>どの国で作られたか</b>を調べ、その国が抱える開発課題を、この授業で学んだ概念を<b>2つ以上</b>使って分析せよ（例：GVC、労働移動、ジェンダー、制度、外部性…）。最後に、<b>買い手であるあなたにできること</b>を1つ、実証的な根拠とともに提案すること。"},
+  {name:"ニッポンの中の開発課題",
+   body:"<b>日本国内の課題を1つ</b>選べ（例：地方の衰退、子どもの貧困、外国人労働者、耕作放棄地、シャッター商店街など）。この授業で学んだ概念を<b>2つ以上</b>使ってその課題を分析せよ（例：貧困の罠、機会費用、外部性、共同体の失敗、制度…）。最後に、講義で学んだ<b>途上国の実証研究や政策</b>から日本に応用できる「処方箋」を1つ提案すること。"},
+  {name:"勇者、JICAへ行く ― 10億円プロジェクトの設計",
+   body:"あなたは<b>JICAの職員</b>になった。担当する途上国を1つ選び、<b>予算10億円</b>の開発プロジェクトを設計せよ。①解決したい課題とその現状（データや講義の事実を引用）、②介入の内容と「なぜ効くと考えるか」（講義で学んだ実証研究を<b>2つ以上</b>引用）、③効果をどう検証するか（RCTの設計：誰を処置群・対照群にし、何を測るか）の3点を必ず含めること。"},
+  {name:"2026年・世界の開発ニュースを読み解く",
+   body:"<b>2026年に実際に報じられた、途上国・新興国に関わるニュースを1つ</b>選べ（例：食料価格、関税・貿易、気候災害、援助、紛争、選挙、送金・移民など）。この授業で学んだ概念を<b>2つ以上</b>使って、<b>「誰が得をし、誰が損をするのか」</b>を分析せよ。最後に、そのニュースが<b>日本とあなた自身</b>にどうつながるかを論じること。"}
+];
+const FINAL_GENERIC =
+  "この授業で学んだ概念を2つ以上使い、途上国・新興国に関わる現実の題材（あなたの持ち物の生産国、日本国内の開発課題、国際協力プロジェクト、2026年のニュースなど）を1つ選んで分析せよ。";
+
+/* ---------- 照合用データ（答えはすべてハッシュ化済み・平文なし） ---------- */
+const SUMMON_HASHES = [
+  "74954cc40669c8234dc8dd50827318690a21d0783ae47fcca6c0f49b811d8f58",
+  "e9d706e63c56c54e9e15d76febd639864f89691dd52ee01dbbbc3196c75c1382",
+  "40dc069043eebdeebde9907622a7ef78623abb71f91d04fb5be0e957f88eed6f"
+];
+const SPELL_HASHES = [
+  "3f37e2e243708e8af3fa9a673c7d96c764aa30cac323842a6b14a8e1a960410e",
+  "2858562cb7e14ee66dd0eaed0f492865f6e345b0dc293a8a67327ec3328f26fa",
+  "5564abaad0f7011aa19bab47a5e8b9772d6c28ed0b4c5630973b0de5be72e8f9"
+];
+const RUNE_HASHES = [
+  "a34bcbce8761ebd247264272dca8ba77f336b77ed367563c55b7c3dfd44353f2",
+  "3f19db5a06f7ca7b232c42adc14fe8ce6dcfe5449aa3f1c2b05a2242e7b26fdd",
+  "54c1f14e32475ae86b310e08b366436f70e16fc6746cf20f76ab5bc972d12773",
+  "3bfe178c411d8bb1e31f87703bf7598344d648d69a8127cc25046d42bee392d2",
+  "cf9200a2c0d00e1e18183735fa074e2eb199265f83bf1e27557e088c944f5913",
+  "dc360d24d3c452bf4304390488b285b862b3052bd600de94d45fec34211130e7",
+  "dcd70c8e0e968145ac5e9ce98be9bbcd19c58fc90ac84802e505627fecf5845d",
+  "b8c28436986410c6c475f129e77f4e235a615bb4184a93e701cdd00a6704cea9",
+  "9a52039dead1ad21b8fe8b25e3ec3c43c9a5643c385337f412c59bef1d85aa8a",
+  "b5fa54717606f6f992b230ad31972ba743491768e9b81239c443cd82e1d2cab7",
+  "0b487e67338c1adb572d5172030d7a8c394ecca14cc4da9123b83475f01dc695",
+  "94156261b8f236600d61a8aa17b9429d760b5b8c9ea048f5c56be4994aefdf6b",
+  "ac4908ba7423940eb253a7578da23bae6efad36246752a6b6e79256e79cd4294",
+  "fac621c84377a6b992212dc2a6399eac65d458662462d113c348bb153c334695"
+];
+const GATES = [
+  {name:"実証の門（第1部・めぐみの平原）", icon:"🔬",
+   riddle:"賢者エビデンスくんの魔法・RCTは、人々を2つの群に分ける。<b>処置を受けずに比較の基準となる群の名</b>を告げよ。",
+   hint:"ヒント：第1の試練（第1回講義）。漢字3文字またはカタカナでも良い。",
+   hashes:["e629efcbe1b08fea1050195e734248af72e9cfae88d993b350b78e5d4ca901e8","9e5865ec0b2cab20626ecf8a7566839291fa371c1251e36be2c8e9809b7d0114","6fc38dad6d4e89b665ddc42998fe4e6e707d7f39d42a20cdd587ae2cf4648b41","e8c798c2a3baf72fa83f892a576ff8ecf1ebac59ac82d200cb8fefb6f645adca"],
+   digit:"2", reason:"処置群と対照群――<b>2つ</b>の群。門に浮かんだ数字は「2」。"},
+  {name:"いのちの門（第2部・いのちの森）", icon:"🌱",
+   riddle:"健康と栄養への投資が一生を左右する、妊娠から2歳までの<b>「取り返しのつかない窓」の名</b>を告げよ。",
+   hint:"ヒント：第6の試練（第6回講義）。「◯◯の◯◯◯◯日」。数字を含めて答えよ。",
+   hashes:["96faad3976c9ae897cb70624bd4701fcc368eaba9c1f43beb7f8f71512c93be3","a20fe5edad62c6d40e7506bcaa99a9f08501c1d732e65918bd2168aba3f80f8f","bebe615ea24d6d7a89c9011c6f4e83eae2d52ee102177b70c72504d767ab55c8","fbe4bf3759fa99d8b8e2ffb1c4c68578cea7d30cfe91b906ab31a52e15ac926f","820ce385c367f5646e9d7538a64ff452aa52745a6d31c68c1a8ad5a41c393544","276c08d9094a9d00d25e69663dbcf4e8d0e9812b5e9ffc7ae473a97b5b2ccd61","04c5d10fc067266f46372241815fa207433f697e92ef82d386b5d484fbba1432"],
+   digit:"0", reason:"駆虫の奇跡（欠席−25%）からPROGRESAの奇跡（発育阻害−25%）を引くと……25−25=<b>0</b>。門に浮かんだ数字は「0」。"},
+  {name:"みつどもえの門（第3部・交易都市）", icon:"🤝",
+   riddle:"市場の魔法、政府の盾……ミレニアの繁栄を支える<b>「第三の力」の名</b>を告げよ。",
+   hint:"ヒント：第1回からずっと一緒に旅してきた、3人目の仲間を思い出そう。",
+   hashes:["696a090157308dbfc9fc0866c79fc8ba064859c281cecc03c60bb009ce87194e","fdb985563d988d22d7e4599cfde9dc1f3df58baab228cd59de21ae42cb8eaa3b","6fbebf2f8661f34f246c75251280678352bfb563bdbbe02fe2127901616542ae"],
+   digit:"3", reason:"市場・政府・共同体――開発を担う<b>3</b>つの主体。門に浮かんだ数字は「3」。"},
+  {name:"ゼロの門（第4部・三つの闇）", icon:"🕊️",
+   riddle:"JICAの勇者たちの支援を受け、モザンビークが2015年に成し遂げた<b>「◯◯ゼロ宣言」</b>。◯◯に入る言葉を告げよ。",
+   hint:"ヒント：第12の試練（第12回講義）。大地に埋められた戦争の爪痕。",
+   hashes:["72db9c5d6819d8dddefaa201b2c904081416df1ad833ac7e72f604bfc2377538","861ecda96995acde49784e1b6c25c3443caaa4b32ddba666205c3b937b47b5a4","878c75e99b0b08367cffb53459bb7bda124e6e76265a751b68b46cce1fd3042a","997f20f5602fb9ca0f61c0741b34ae38c01b79c472ef0fe8f874c8a0d7f43b89","d9389114df1edb16decb7504300243746834723d2626bc2b557871378dacb66d"],
+   digit:"0", reason:"すべての闇を「ゼロ」に――地雷<b>ゼロ</b>宣言。門に浮かんだ数字は「0」。"}
+];
+const CODE_HASH = "7b73f748d34d5ae87b843e0717d57848ea4876144905d9233c44b0428d08e15f";
+
+/* ---------- 14の試練データ（地域・ボス・キーワード・賢者のヒント） ---------- */
+const LECTURES = [
+  {no:1, region:"はじまりの村", boss:"迷いの霧カオス", title:"開発経済学の基本的視座",
+   kw:["市場・政府・共同体","市場の失敗","RCT","構造主義→新古典派→ミクロ実証"],
+   hint:"RCTは人々を<b>2つの群</b>に分ける魔法。処置を受けない側の群の名を、魔王城の「実証の門」が問うだろう。冒険の書・第1部の記述では「どの主体のどんな失敗を、どの主体が補ったか」という型で書くと強い。"},
+  {no:2, region:"みのりの畑", boss:"飢餓竜ファミネ", title:"緑の革命と飢餓",
+   kw:["緑の革命の三点セット","IR8","農家の二面性","肥料ナッジRCT"],
+   hint:"「技術だけでは飢餓は消えない」。第1部の記述で緑の革命を選ぶなら、三点セットのどれが欠け、それを市場・政府・共同体の誰が補えるのかを考えよ。インドの米輸出禁止は「政府の失敗」の生きた教材だ。"},
+  {no:3, region:"銀の水車小屋", boss:"高利貸しの悪魔シャーク", title:"農村金融とリスク対処",
+   kw:["逆選択とモラル・ハザード","グラミン銀行","M-Pesa","コミットメント貯蓄"],
+   hint:"グラミン銀行は「共同体の力で市場の失敗（情報の非対称性）を補った」見本だ。第1部の記述の題材に最適。M-Pesaは第3部（リープフロッグ）でも使える万能カードだと覚えておけ。"},
+  {no:4, region:"まもりの森", boss:"乱獲の巨人グラット", title:"所有権と共有資源管理",
+   kw:["共有地の悲劇","オストロムの8原則","ガーナ植林4倍","ベナンRCT"],
+   hint:"オストロムの教え「所有形態よりルールデザインの質が結果を決める」。第1部の記述を締めくくる一文に効く。この試練を越えれば平原は制覇、市場ちゃんが仲間になる！"},
+  {no:5, region:"まなびの町", boss:"無学の魔女イグノラ", title:"教育 ― 量から質へ",
+   kw:["学習危機","Schooling≠Learning","LAYS","TaRL","INPRES"],
+   hint:"「学校を建てる（量）」から「学びの質へ」。第2部の記述はINPRES（量の効果）とTaRL（質の改善）を対にして書くと美しい。LAYSという新しいモノサシの意味も添えられれば一流の書記官だ。"},
+  {no:6, region:"いやしの泉", boss:"疫病の死神ペスタ", title:"保健 ― 最初の1000日",
+   kw:["最初の1000日","駆虫RCT(欠席−25%)","PROGRESA(発育阻害−25%)","正の外部性"],
+   hint:"駆虫の<b>−25%</b>とPROGRESAの<b>−25%</b>。2つの数字の引き算が「いのちの門」の数字になる。そして「取り返しのつかない窓」の名も門が問う。数字とセットで胸に刻め。"},
+  {no:7, region:"つばさの村", boss:"偏見の呪術師バイアス", title:"ジェンダーと開発",
+   kw:["U字型関係","アウトサイド・オプション","多元的無知","児童婚の3仮説"],
+   hint:"「干ばつでダウリー地域は児童婚が減り、婚資地域は増える」――制度を知らずに設計した政策は逆効果になる。第2部で「人への投資が効く<b>条件</b>」を論じるときの切り札だ。"},
+  {no:8, region:"旅立ちの街道", boss:"蜃気楼の怪鳥ミラージュ", title:"労働移動と都市",
+   kw:["ハリス=トダロ","期待賃金","集積の利益","ボゴタvsジャカルタ"],
+   hint:"期待賃金＝賃金×就業確率。ボゴタとジャカルタのBRTの明暗は「作れば効くとは限らない」動かぬ証拠。第2部でも第4部でも引用できる。この試練で森は制覇、共同体さんが加わる！"},
+  {no:9, region:"工房都市ファクトリア", boss:"サビの錬金術師ラスト", title:"産業発展と企業成長",
+   kw:["TFP","カイゼンRCT(+11%)","信用制約(年率60%)","早すぎる脱工業化"],
+   hint:"TFPこそ豊かさの源泉。カイゼンRCT（+11%が9年持続）は「ソフトの支援が効く」証拠として第3部の記述の強い味方だ。ハード（道路）が裏目に出たFaberの研究と対にせよ。"},
+  {no:10, region:"大港湾トレディア", boss:"嵐の海賊タリフ", title:"国際経済活動とGVC",
+   kw:["GVC","輸出の3経路","深圳(1.3万倍)","中進国の罠(1万ドル)"],
+   hint:"第3部で事例を選ぶなら数字を添えよ――1994年に1万ドルを超えた韓国、漁村からGDP1.3万倍の深圳。保護主義の時代に「次の国」は同じ道を歩めるか？と問い返せば議論が深まる。"},
+  {no:11, region:"王都インスティタス", boss:"収奪の帝王エクストラクト", title:"制度 ― 社会のルール",
+   kw:["包括的制度vs収奪的制度","ノガレスの双子","AJR2001","経路依存性"],
+   hint:"市場の魔法、政府の盾に続く<b>第三の力</b>の名を「みつどもえの門」が問う。包括的制度vs収奪的制度は第3部の背骨。これで都市は制覇、政府くんが加わり、パーティーは完成する！"},
+  {no:12, region:"戦火の谷", boss:"争いの双頭竜ウォーロード", title:"紛争 ― なぜ人は争うのか",
+   kw:["フィアロンの3条件","機会費用と紛争","CBT+現金(−50%)","地雷ゼロ宣言2015"],
+   hint:"モザンビークの「地雷<b>ゼロ</b>宣言」（2015年）――この「ゼロ」の記憶が最後の門を開く。第4部では「稼げない→戦う→もっと貧しく」の悪循環を、機会費用の言葉で描け。"},
+  {no:13, region:"賄賂の沼", boss:"毒蛇コラプト", title:"汚職 ― 測定と処方箋",
+   kw:["B > p×(w−v+c)+d","ウガンダ13%","複数均衡","ビッグ・プッシュ"],
+   hint:"汚職の式 B > p×(w−v+c)+d は「どの文字を動かすか」という<b>介入の設計図</b>。第4部の提案パートで使えば、書記官（教員）は唸るだろう。"},
+  {no:14, region:"灼熱の火山", boss:"炎獣ヒートロス", title:"気候変動とこれからの開発経済学",
+   kw:["3つの不条理","+1℃で−2%","天候インデックス保険","パリ協定1000億ドル"],
+   hint:"最後の試練だ。「排出していないのに被害だけ受ける」3つの不条理は、第4部の題材として最も新しく、最も熱い。すべてのルーンが揃ったら――魔王城の城門で、14文字の呪文を唱えよ。"}
+];
+
+const CHAPTERS = [
+  {name:"第1章　めぐみの平原", range:[0,3], comp:"market", compName:"市場ちゃん",
+   desc:"開発経済学の基礎、農業、金融、コモンズ ― 冒険の始まりの地。"},
+  {name:"第2章　いのちの森", range:[4,7], comp:"community", compName:"共同体さん",
+   desc:"教育・保健・ジェンダー・労働移動 ― 「人への投資」が眠る深き森。"},
+  {name:"第3章　はんえいの交易都市", range:[8,10], comp:"govt", compName:"政府くん",
+   desc:"産業・貿易・制度 ― 繁栄の仕組みを学ぶ、にぎわいの都。"},
+  {name:"第4章　三つの闇の山脈", range:[11,13], comp:null, compName:null,
+   desc:"紛争・汚職・気候変動 ― 魔王城を守る、最後にして最大の障壁。"}
+];
+
+const PARTY = [
+  {id:"evidence", face:"🧙", nm:"エビデンスくん", cls:"賢者（最初から同行）",
+   desc:"RCTの魔法を操る導き手。「その介入、本当に効くのか？」が口ぐせ。処置群と対照群に分ける魔法で真実を見抜く。"},
+  {id:"market", face:"🧝", nm:"市場ちゃん", cls:"商人（第1章クリアで加入）",
+   desc:"価格シグナルと競争の使い手。私的財の供給はお手のもの。ただし外部性・公共財・情報の非対称性が弱点。"},
+  {id:"community", face:"🧑‍🌾", nm:"共同体さん", cls:"僧侶（第2章クリアで加入）",
+   desc:"信頼と相互扶助の癒し手。取引費用を下げる結界を張る。閉鎖性とエリート・キャプチャーが弱点。"},
+  {id:"govt", face:"🛡️", nm:"政府くん", cls:"騎士（第3章クリアで加入）",
+   desc:"法と公共財の盾を持つ守り手。市場の失敗に立ち向かう。官僚的非効率と汚職の呪いが弱点。"}
+];
+
+/* ---------- SHA-256（同期・依存なし） ---------- */
+function sha256hex(str){
+  const data = new TextEncoder().encode(str);
+  const K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+    0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+    0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+    0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+    0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+    0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+    0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+    0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  let H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  const len = data.length, bitLen = len * 8;
+  const paddedLen = Math.ceil((len + 9) / 64) * 64;
+  const bytes = new Uint8Array(paddedLen);
+  bytes.set(data); bytes[len] = 0x80;
+  const dv = new DataView(bytes.buffer);
+  dv.setUint32(paddedLen - 4, bitLen >>> 0);
+  dv.setUint32(paddedLen - 8, Math.floor(bitLen / 0x100000000));
+  const w = new Uint32Array(64);
+  const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+  for (let i = 0; i < paddedLen; i += 64) {
+    for (let t = 0; t < 16; t++) w[t] = dv.getUint32(i + t * 4);
+    for (let t = 16; t < 64; t++) {
+      const s0 = rotr(w[t-15],7) ^ rotr(w[t-15],18) ^ (w[t-15] >>> 3);
+      const s1 = rotr(w[t-2],17) ^ rotr(w[t-2],19) ^ (w[t-2] >>> 10);
+      w[t] = (w[t-16] + s0 + w[t-7] + s1) >>> 0;
+    }
+    let [a,b,c,d,e,f,g,h] = H;
+    for (let t = 0; t < 64; t++) {
+      const S1 = rotr(e,6) ^ rotr(e,11) ^ rotr(e,25);
+      const ch = (e & f) ^ (~e & g);
+      const t1 = (h + S1 + ch + K[t] + w[t]) >>> 0;
+      const S0 = rotr(a,2) ^ rotr(a,13) ^ rotr(a,22);
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const t2 = (S0 + maj) >>> 0;
+      h = g; g = f; f = e; e = (d + t1) >>> 0;
+      d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+    }
+    H = H.map((x, j) => (x + [a,b,c,d,e,f,g,h][j]) >>> 0);
+  }
+  return H.map(x => x.toString(16).padStart(8, "0")).join("");
+}
+
+/* 入力の正規化：全角→半角、空白除去、小文字化、カタカナ→ひらがな */
+function norm(s){
+  return (s || "").normalize("NFKC").replace(/\s+/g, "").toLowerCase()
+    .replace(/[ァ-ヶ]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+}
+function hit(kind, value, hashes){
+  const h = sha256hex("ECO331|" + kind + "|" + norm(value));
+  return (Array.isArray(hashes) ? hashes : [hashes]).includes(h);
+}
+
+/* ---------- 進行状況 ---------- */
+const KEY = "eco331_quest_v1";
+let state = {summon:false, sid:null, runes:Array(14).fill(null), spell:false, gates:Array(4).fill(false), throne:false, pcode:null};
+try{
+  const saved = JSON.parse(localStorage.getItem(KEY));
+  if (saved && saved.runes) state = Object.assign(state, saved);
+}catch(e){}
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+
+/* ---------- 画面切替 ---------- */
+function showScene(name){
+  document.querySelectorAll("main section").forEach(s => s.classList.remove("visible"));
+  document.getElementById("scene-" + name).classList.add("visible");
+  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("active", b.dataset.scene === name));
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => showScene(b.dataset.scene)));
+
+/* ---------- 召喚の儀 ---------- */
+const LETTER_HTML = `
+<p>親愛なる異界の旅人へ。余はミレニア王国国王、<b>デヴェロス</b>である。</p>
+<p>我が大陸はいま、<b>貧困魔王ポヴェルタ</b>の影に覆われている。畑は実らず、学び舎の灯は消え、若者は仕事を求めてさまよい、賄賂の沼が広がり、空は年々熱くなる。――だが余は知っている。<b>この魔王は剣では倒せぬ</b>。倒せるのは、「なぜ貧しさが続くのか」を見抜き、「何が本当に効くのか」を確かめる<b>知恵の力</b>だけなのだ。</p>
+<p>そなたには、大陸に散らばる<b>14の試練</b>を制してもらいたい。試練を制するたびに<b>ルーン文字</b>を授かる。14のルーンを試練の順に連ねれば、魔王城の城門を開く<b>呪文</b>となろう。</p>
+<p>城内には<b>4つの門</b>がそなたを待つ。門の謎は、そなたが記す<b>「冒険の書」</b>（期末レポート）と響き合っている。すべての門を開き、玉座の扉を越え、魔王に知恵の刃を突き立てよ。</p>
+<p>成し遂げたあかつきには、<b>『開発の賢者』の称号</b>と、王家の宝<b>『みらいのコンパス』</b>を授けると約束しよう。</p>
+<p>道中、4人の導き手がそなたを支える。焦らずともよい。<b>希少な時間をどう配分するかは、勇者たるそなたの選択だ。</b></p>
+<p class="sign" style="text-align:right;">―― ミレニア王国国王 デヴェロス</p>`;
+
+function checkSummon(){
+  const v = document.getElementById("summonInput").value;
+  const msg = document.getElementById("summonMsg");
+  if (hit("summon", v, SUMMON_HASHES)){
+    state.summon = true; save();
+    renderSummon(true);
+  } else {
+    msg.className = "msg ng";
+    msg.textContent = "……石版は沈黙している。1=A、2=B、3=C……と置き換えてみよう。8文字の言葉になるはずだ。";
+    shake("summonBox");
+  }
+}
+function renderSummon(withTypewriter){
+  if (!state.summon) return;
+  document.getElementById("summonBox").style.display = "none";
+  document.getElementById("letterBox").style.display = "block";
+  document.getElementById("badgeBox").style.display = "block";
+  document.getElementById("partyBox").style.display = "block";
+  const target = document.getElementById("letterText");
+  if (withTypewriter){ typeLetter(target, LETTER_HTML); } else { target.innerHTML = LETTER_HTML; }
+}
+function typeLetter(target, html){
+  target.innerHTML = "";
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html;
+  const parts = Array.from(tmp.children);
+  let i = 0;
+  (function next(){
+    if (i >= parts.length) return;
+    const p = parts[i].cloneNode(true);
+    p.style.opacity = 0; p.style.transition = "opacity 1.0s ease";
+    target.appendChild(p);
+    requestAnimationFrame(() => requestAnimationFrame(() => { p.style.opacity = 1; }));
+    i++;
+    setTimeout(next, 900);
+  })();
+}
+
+/* ---------- 勇者登録 ---------- */
+function registerBadge(){
+  const raw = document.getElementById("sidInput").value;
+  const sid = (raw || "").normalize("NFKC").replace(/\D/g, "");
+  const msg = document.getElementById("sidMsg");
+  // 71または79 + 入学年下2桁(18〜26) + ID番号001〜999
+  if (!/^7[19](1[89]|2[0-6])(?!000)\d{3}$/.test(sid)){
+    msg.className = "msg ng";
+    msg.textContent = "……その番号はギルドの台帳にない。71または79で始まる7桁の学籍番号を確認しよう。";
+    shake("badgeBox");
+    return;
+  }
+  state.sid = sid; save();
+  msg.className = "msg ok";
+  msg.textContent = "勇者ギルドに登録された。ようこそ、勇者No." + sid + "！";
+  renderAll();
+}
+
+/* ---------- 個人暗証番号・証明コード ---------- */
+/* 個人暗証番号 → 王家の預言（基本コード）への逆変換 */
+function personalToBase(personal, sid){
+  const p = norm(personal);
+  if (!/^\d{4}$/.test(p)) return null;
+  const last4 = sid.slice(-4);
+  let base = "";
+  for (let i = 0; i < 4; i++){
+    base += String((Number(p[i]) - Number(last4[i]) + 10) % 10);
+  }
+  return base;
+}
+function certFor(sid, personal){
+  return "HERO-" + sha256hex("ECO331|cert|" + sid + "|" + norm(personal)).slice(0, 8).toUpperCase();
+}
+
+/* ---------- パーティー描画 ---------- */
+function companionJoined(id){
+  if (id === "evidence") return true;
+  const ch = CHAPTERS.find(c => c.comp === id);
+  if (!ch) return false;
+  for (let i = ch.range[0]; i <= ch.range[1]; i++) if (!state.runes[i]) return false;
+  return true;
+}
+function buildParty(){
+  const grid = document.getElementById("partyGrid");
+  grid.innerHTML = "";
+  PARTY.forEach(m => {
+    const joined = companionJoined(m.id);
+    const div = document.createElement("div");
+    div.className = "member" + (joined ? "" : " locked");
+    div.innerHTML = `<div class="face">${m.face}</div><div class="nm">${m.nm}</div><div class="cls">${m.cls}</div><div class="desc">${m.desc}</div>`;
+    grid.appendChild(div);
+  });
+}
+
+/* ---------- 冒険マップ描画 ---------- */
+function buildMap(){
+  const area = document.getElementById("mapArea");
+  area.innerHTML = "";
+  CHAPTERS.forEach(ch => {
+    const wrap = document.createElement("div");
+    wrap.className = "chapter";
+    const cleared = LECTURES.slice(ch.range[0], ch.range[1] + 1).every((_, k) => state.runes[ch.range[0] + k]);
+    let compTxt = "";
+    if (ch.compName){
+      compTxt = cleared ? `✨ ${ch.compName}が仲間に加わった！` : `この章を制覇すると ${ch.compName} が仲間になる`;
+    } else {
+      compTxt = cleared ? "✨ 全パーティーで闇を打ち払った！" : "全員の力を合わせて挑め";
+    }
+    wrap.innerHTML = `<div class="chapter-head"><h2>${ch.name}</h2><span class="cstat">${ch.desc}<br>${compTxt}</span></div>`;
+    for (let i = ch.range[0]; i <= ch.range[1]; i++){
+      wrap.appendChild(regionCard(i));
+    }
+    area.appendChild(wrap);
+  });
+}
+function regionCard(i){
+  const lec = LECTURES[i];
+  const done = !!state.runes[i];
+  const div = document.createElement("div");
+  div.className = "region" + (done ? " done" : "");
+  const url = FORM_URLS.quiz[i];
+  const link = url
+    ? `<a class="flink" href="${url}" target="_blank" rel="noopener">⚔️ ボス戦に挑む（復習クイズ）</a>`
+    : `<a class="flink off">⚔️ ボス戦（フォーム準備中 — Classroomから挑戦）</a>`;
+  const bossStat = done ? `✅ 討伐済み：${lec.boss}` : `👿 ボス：${lec.boss}`;
+  const runeArea = done
+    ? `<div style="margin-top:8px;">獲得ルーン：<span class="runeSlot">${state.runes[i]}</span></div>
+       <div class="hintbox"><b>🧙 賢者エビデンスくんのヒント</b><br>${lec.hint}</div>`
+    : `<div class="row" style="margin-top:8px;">
+         <input type="text" id="rune${i}" maxlength="4" placeholder="送信完了画面のルーン1文字を刻印">
+         <button class="act" onclick="checkRune(${i})">刻印する</button>
+       </div>
+       <div class="msg" id="runeMsg${i}"></div>
+       <p class="note">刻印すると、賢者からレポート攻略のヒントが授かれる。</p>`;
+  div.innerHTML = `
+    <div class="region-top">
+      <span class="ttl">【第${lec.no}の試練】${lec.region} <span class="note">― ${lec.title}（第${lec.no}回講義）</span></span>
+      <span class="boss">${bossStat}</span>
+    </div>
+    <div class="kw">復習キーワード：<b>${lec.kw.join("／")}</b></div>
+    ${link}
+    ${runeArea}`;
+  return div;
+}
+function checkRune(i){
+  const v = document.getElementById("rune" + i).value;
+  const msg = document.getElementById("runeMsg" + i);
+  if (hit("rune" + (i + 1), v, RUNE_HASHES[i])){
+    state.runes[i] = norm(v); save();
+    renderAll();
+  } else {
+    msg.className = "msg ng";
+    msg.textContent = "……ルーンが弾かれた。クイズ送信完了画面の「獲得ルーン」（ひらがな1文字）を確認しよう。";
+  }
+}
+
+/* ---------- 魔王城 ---------- */
+function checkSpell(){
+  const v = document.getElementById("spellInput").value;
+  const msg = document.getElementById("spellMsg");
+  if (hit("spell", v, SPELL_HASHES)){
+    state.spell = true; save();
+    renderAll();
+  } else {
+    msg.className = "msg ng";
+    msg.textContent = "……城門はびくともしない。14個のルーンを試練の順番どおりに、ひらがなで続けて唱えよう。";
+    shake("spellBox");
+  }
+}
+function buildGates(){
+  const area = document.getElementById("gatesArea");
+  area.innerHTML = "";
+  GATES.forEach((g, r) => {
+    const open = state.gates[r];
+    const div = document.createElement("div");
+    div.className = "gate" + (open ? " open" : "");
+    if (open){
+      div.innerHTML = `<div class="gttl">${g.icon} ${g.name} ― 開門！</div>
+        <p style="font-size:.9rem; margin-top:6px;">${g.reason}</p>`;
+    } else {
+      div.innerHTML = `<div class="gttl">${g.icon} ${g.name}</div>
+        <p style="font-size:.92rem; margin:6px 0;">${g.riddle}</p>
+        <p class="note">${g.hint}</p>
+        <div class="row">
+          <input type="text" id="gate${r}" placeholder="答えを告げる">
+          <button class="act" onclick="checkGate(${r})">告げる</button>
+        </div>
+        <div class="msg" id="gateMsg${r}"></div>`;
+    }
+    area.appendChild(div);
+  });
+  for (let r = 0; r < 4; r++){
+    const d = document.getElementById("digit" + r);
+    if (state.gates[r]){ d.textContent = GATES[r].digit; d.classList.remove("unknown"); }
+    else { d.textContent = "?"; d.classList.add("unknown"); }
+  }
+}
+function checkGate(r){
+  const v = document.getElementById("gate" + r).value;
+  const msg = document.getElementById("gateMsg" + r);
+  if (hit("gate" + (r + 1), v, GATES[r].hashes)){
+    state.gates[r] = true; save();
+    renderAll();
+  } else {
+    msg.className = "msg ng";
+    msg.textContent = "……門は沈黙している。ヒントの示す試練（講義回）を復習して再挑戦しよう。";
+  }
+}
+function checkThrone(){
+  const msg = document.getElementById("throneMsg");
+  if (!state.sid){
+    msg.className = "msg ng";
+    msg.textContent = "先に「召喚の間」で勇者登録（学籍番号）を済ませよう。";
+    return;
+  }
+  if (!state.gates.every(Boolean)){
+    msg.className = "msg ng";
+    msg.textContent = "……扉は4つの門の力で封じられている。先にすべての門を開こう。";
+    return;
+  }
+  const v = document.getElementById("throneInput").value;
+  const base = personalToBase(v, state.sid);
+  if (base && sha256hex("ECO331|code|" + base) === CODE_HASH){
+    state.throne = true; state.pcode = norm(v); save();
+    renderAll();
+  } else {
+    msg.className = "msg ng";
+    msg.textContent = "……数字盤が赤く光った。預言の四桁＋勇者番号下4桁（桁ごとに足して10で割った余り）を確かめよう。";
+    shake("throneBox");
+  }
+}
+
+/* ---------- 称号 ---------- */
+function rank(){
+  const n = state.runes.filter(Boolean).length;
+  if (state.throne) return "開発の賢者";
+  if (n >= 14) return state.spell ? "魔王城の挑戦者" : "真の勇者";
+  if (n >= 12) return "竜殺しの勇者";
+  if (n >= 8)  return "歴戦の勇者";
+  if (n >= 4)  return "駆け出しの勇者";
+  if (n >= 1)  return "見習い冒険者";
+  return state.sid ? "新米勇者" : "村人";
+}
+
+/* ---------- 全体描画 ---------- */
+function renderAll(){
+  // ヘッダー
+  const n = state.runes.filter(Boolean).length;
+  document.getElementById("badgeChip").textContent = state.sid ? ("🛡️ 勇者No." + state.sid) : "勇者未登録";
+  document.getElementById("rankChip").textContent = "称号：" + rank();
+  document.getElementById("hpFill").style.width = (n / 14 * 100) + "%";
+  document.getElementById("hpText").textContent = n + "/14";
+  // 召喚の間
+  renderSummon(false);
+  buildParty();
+  // マップ
+  buildMap();
+  // 城
+  if (state.spell){
+    document.getElementById("spellBox").style.display = "none";
+    document.getElementById("castleInner").style.display = "block";
+    buildGates();
+  } else {
+    document.getElementById("spellBox").style.display = "block";
+    document.getElementById("castleInner").style.display = "none";
+  }
+  // 玉座・最終決戦
+  if (state.spell && state.throne && state.sid && state.pcode){
+    document.getElementById("throneBox").style.display = "none";
+    document.getElementById("finalArea").style.display = "block";
+    // 専用テーマ
+    let themeHtml;
+    if (PERSONAL_TOPIC){
+      const idx = Number(state.sid.slice(-3)) % FINAL_THEMES.length;
+      const t = FINAL_THEMES[idx];
+      themeHtml = `<div class="tname">「${t.name}」</div><p style="margin-top:8px;">${t.body}</p>
+        <p class="note" style="margin-top:8px;">※この題目はあなた専用です。「魔王城の扉」フォームと「冒険の書 提出」フォームの「題目名」欄に、上の題目名をそのまま書き写してください。</p>`;
+    } else {
+      themeHtml = `<div class="tname">「最終決戦の書」</div><p style="margin-top:8px;">${FINAL_GENERIC}</p>`;
+    }
+    document.getElementById("themeBox").innerHTML = themeHtml;
+    document.getElementById("certBox").textContent = certFor(state.sid, state.pcode);
+    document.getElementById("castleFormLink").innerHTML = FORM_URLS.castle
+      ? `<a class="flink" href="${FORM_URLS.castle}" target="_blank" rel="noopener">［魔王城の扉フォームを開く］</a> `
+      : `<span class="note">［魔王城の扉フォーム：Classroom参照］</span> `;
+    document.getElementById("submitFormLink").innerHTML = FORM_URLS.submit
+      ? `<a class="flink" href="${FORM_URLS.submit}" target="_blank" rel="noopener">［冒険の書 提出フォームを開く］</a> `
+      : `<span class="note">［提出フォーム：Classroom参照］</span> `;
+  } else if (state.spell){
+    document.getElementById("throneBox").style.display = "block";
+    document.getElementById("finalArea").style.display = "none";
+  }
+}
+
+function shake(id){
+  const el = document.getElementById(id);
+  el.classList.remove("shake");
+  void el.offsetWidth;
+  el.classList.add("shake");
+}
+
+function resetProgress(){
+  if (confirm("冒険の記録（ルーン・門の進行状況）をすべて消去します。よろしいですか？")){
+    localStorage.removeItem(KEY);
+    location.reload();
+  }
+}
+
+renderAll();
+</script>
+</body>
+</html>
